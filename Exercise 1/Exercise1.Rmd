@@ -1,0 +1,119 @@
+---
+title: "INF3104 Exercise 1"
+author: "Weiyang Li 1005866154"
+date: "2024-09-11"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load necessary packages
+library(tidyverse)
+library(janitor)
+```
+
+## 1)
+
+```{r}
+# Number of ridings and party names
+ridings <- 338
+parties <- c("Liberal", "Conservative", "Bloc Québécois", "New Democratic", "Green", "Others")
+
+# Simulate the election results
+set.seed(154)  
+simulated_election_data <- tibble(
+  riding_number = 1:ridings,
+  elected_party = sample(parties, ridings, replace = TRUE)
+)
+
+# Display the first few rows of the simulated data
+head(simulated_election_data)
+```
+
+## 2)
+
+```{r}
+# Load data
+data <- read.csv("table_tableau11.csv")
+
+# Display the first few rows of the data
+head(data)
+```
+
+## 3)
+
+```{r}
+# Clean the column names and select the relevant columns
+cleaned_elections_data <- data %>%
+  clean_names() %>%
+  select(electoral_district_name_nom_de_circonscription, elected_candidate_candidat_elu)
+
+# Simplify the column names
+cleaned_elections_data <- cleaned_elections_data %>%
+  rename(riding = electoral_district_name_nom_de_circonscription,
+         elected_candidate = elected_candidate_candidat_elu)
+```
+
+```{r}
+# Separate the elected candidate data
+cleaned_elections_data <- cleaned_elections_data %>%
+  separate(
+    col = elected_candidate,
+    into = c("party", "party_french"),
+    sep = "/", extra = "merge") %>%
+  select(riding, party_french)
+```
+
+```{r}
+# Recode the French party names to English
+cleaned_elections_data <- cleaned_elections_data %>%
+  mutate(party = case_when(
+    party_french == "Libéral" ~ "Liberal",
+    party_french == "Conservateur" ~ "Conservative",
+    party_french == "Bloc Québécois" ~ "Bloc Québécois",
+    party_french == "NPD-Nouveau Parti démocratique" ~ "New Democratic",
+    party_french == "Parti Vert" ~ "Green Party",
+    TRUE ~ "Others"
+  ))
+
+# Display the cleaned data
+head(cleaned_elections_data)
+```
+
+```{r}
+# Display the parties
+unique(cleaned_elections_data$party_french)
+
+unique(cleaned_elections_data$party)
+```
+
+## 4)
+
+```{r}
+# Count the number of seats won by each party
+party_seat_counts <- cleaned_elections_data %>% count(party)
+```
+
+```{r}
+# Create a bar plot of the number of seats won by each party
+ggplot(party_seat_counts, aes(x = fct_reorder(party, n), y = n, fill = party)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Seats Won by Each Party in the 2021 Canadian Federal Election",
+    x = "Party",
+    y = "Number of Seats") +
+  scale_fill_manual(values = c(
+    "Liberal" = "deeppink",
+    "Conservative" = "darkslategray3",
+    "Bloc Québécois" = "mediumpurple1",
+    "New Democratic" = "lightgoldenrod1",
+    "Green Party" = "olivedrab2")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+
